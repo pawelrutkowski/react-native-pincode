@@ -74,7 +74,7 @@ onPress: () => {
                 } },
                 React.createElement(react_native_1.Text, { style: [styles.text, {
                   opacity: opacity,
-                  color: this.state.textButtonSelected === text ? colors_1.colors.white : colors_1.colors.grey
+                  color: this.state.textButtonSelected === text ? colors_1.colors.white : colors_1.colors.black
                 }] }, text)))))
         };
       this.endProcess = (pwd) => {
@@ -144,10 +144,10 @@ update: {
                     } }, 'delete'))))
         };
       this.renderTitle = (colorTitle, opacityTitle, attemptFailed, showError) => {
-          return (React.createElement(react_native_1.Text, { style: [styles.textTitle, { color: colorTitle, opacity: opacityTitle }] }, (attemptFailed && this.props.titleAttemptFailed) || (showError && this.props.titleConfirmFailed) || this.props.sentenceTitle))
+          return (React.createElement(react_native_1.Text, { style: [styles.textTitle, { color: '#3C3F43', opacity: opacityTitle }] }, (attemptFailed && this.props.titleAttemptFailed) || (showError && this.props.titleConfirmFailed) || this.props.sentenceTitle))
         };
       this.renderSubtitle = (colorTitle, opacityTitle, attemptFailed, showError) => {
-          return (React.createElement(react_native_1.Text, { style: [styles.textSubtitle, { color: colorTitle, opacity: opacityTitle }] }, attemptFailed || showError ? this.props.subtitleError : this.props.subtitle))
+          return (React.createElement(react_native_1.Text, { style: [styles.textSubtitle, { color: '#3C3F43', opacity: opacityTitle }] }, attemptFailed || showError ? this.props.subtitleError : this.props.subtitle))
         };
       this.state = {
           password: '',
@@ -263,6 +263,7 @@ update: {
 }
 exports.default = PinCode
 let styles = react_native_1.StyleSheet.create({
+  
   container: {
       flex: 1,
       justifyContent: 'center',
@@ -299,26 +300,31 @@ let styles = react_native_1.StyleSheet.create({
     },
   text: {
       fontSize: grid_1.grid.unit * 2,
-      fontWeight: '200'
+      fontWeight: '300',
+      color: '#3C3F43',
     },
   buttonCircle: {
       alignItems: 'center',
       justifyContent: 'center',
       width: grid_1.grid.unit * 4,
       height: grid_1.grid.unit * 4,
-      backgroundColor: 'rgb(242, 245, 251)',
-      borderRadius: grid_1.grid.unit * 2
+      backgroundColor: 'white',
+      borderRadius: grid_1.grid.unit * 2,
+      shadowColor: 'black',
+      shadowOffset: {x: 0, y: 2},
+      shadowOpacity: 0.1,
+      shadowRadius: 7,  
     },
   textTitle: {
-      fontSize: 14,
-      fontWeight: '400',
+      fontSize: 15,
+      fontWeight: '600',
       color: '#3C3F43',
       lineHeight: 20,
       textAlign: 'center'
     },
   textSubtitle: {
-      fontSize: 14,
-      fontWeight: '400',
+      fontSize: 15,
+      fontWeight: '600',
       color: '#3C3F43',
       lineHeight: 20,
       textAlign: 'center'

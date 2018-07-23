@@ -12,6 +12,7 @@ const colors = {
   primary: '#799AE0',
   pink: '#FF87C3',
   grey: '#9dafc8',
+  black: '#000000',
   turquoise: '#7BCDD0',
   darkBlue: '#1B4581',
   cash: '#FF87C3',

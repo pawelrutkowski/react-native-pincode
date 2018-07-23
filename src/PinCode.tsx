@@ -417,12 +417,13 @@ let styles = StyleSheet.create({
     justifyContent: 'center',
     width: grid.unit * 4,
     height: grid.unit * 4,
-    backgroundColor: 'rgb(242, 245, 251)',
+    backgroundColor: 'white',
     borderRadius: grid.unit * 2
   },
   textTitle: {
     fontSize: 20,
     fontWeight: '200',
+    color: '#3C3F43',
     lineHeight: grid.unit * 2.5
   },
   textSubtitle: {
