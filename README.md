@@ -1,5 +1,7 @@
 # react-native-pincode
 
+[![npm](https://img.shields.io/npm/v/@haskkor/react-native-pincode.svg)](https://www.npmjs.com/package/@haskkor/react-native-pincode) [![npm](https://img.shields.io/npm/dt/@haskkor/react-native-pincode.svg)](https://www.npmjs.com/package/@haskkor/react-native-pincode)
+
 _A customizable PIN Code component for react native_
 
 Using:
@@ -20,17 +22,19 @@ yarn add @haskkor/react-native-pincode
 
 **Please note that:**
 
-If you wish to use the `TouchID/FaceID` authentication you will have to link the library:
+If you wish to use the `TouchID/FaceID` authentication you will have to link the [library](https://github.com/naoufal/react-native-touch-id):
 
 ```
 react-native link react-native-touch-id
 ```
 
-If you wish to use `Keychain/Keystore` to store the PIN code you will have to link the library: 
+If you wish to use `Keychain/Keystore` to store the PIN code you will have to link the [library](https://github.com/oblador/react-native-keychain):
 
 ```
 react-native link react-native-keychain
 ```
+
+_Please note that you might have to link those libraries manually._
 
 **IMPORTANT:**
 _If you decide not to use `Keychain/Keystore`, you will have to provide a **`storePin`** property to the `PINCode` component._
@@ -57,14 +61,14 @@ import PINCode from '@haskkor/react-native-pincode'
 |---|---|---|---|---|
 |**`buttonComponentLockedPage`**|Button component to be used at the bottom of the page on the locked application page|TouchableOpacity exit button killing the application|`false`|`any`|
 |**`buttonDeleteComponent`**|Button component to be used at the bottom right of the PIN panel to delete a previous entry|TouchableHighlight button with a `delete` text and the `backspace` material icon|`false`|`any`|
+|**`buttonDeleteText`**|Text of the of the button used to delete a previous entry on the PIN panel|`delete`|`false`|`string`|
 |**`buttonNumberComponent`**|Button component to be used on the PIN panel to select a character for the PIN|TouchableHighlight button with a number text|`false`|`any`|
-|**`colorPassword`**|Color of the dots used for the password component|`turquoise`|`false`|`string`|
 |**`finishProcess`**|Function to be used when the user enters the right PIN code|Removes the values in AsyncStorage and set the status to `success`|`false`|`any`|
 |**`handleResultEnterPin`**|Function to be used to handle the PIN code entered by the user. To be used with the **`pinStatus`** props|Functions that checks the validity of the give PIN code, stores the number of failed attempts in the `AsyncStorage` and the time the application was locked if needed|`false`|`any`|
 |**`iconComponentLockedPage`**|View component to be used between the timer and the text on the locked application page|A circular red View using the `lock` material icon|`false`|`any`|
+|**`iconButtonDeleteDisabled`**|Boolean to remove the icon on the delete button of the PIN panel|`false`|`false`|`boolean`|
 |**`lockedPage`**|View component used as a locked page if the user fails to provide the correct PIN code `maxAttempts` times|A application locked page with a timer indicating to the user the remaining time locked and a button closing the application|`false`|`any`|
 |**`maxAttempts`**|Number of attempts the user is given before locking the application|`3`|`false`|`number`|
-|**`numbersButtonOverlayColor`**|Color of the PIN panel buttons when `highlighted`|`turquoise`|`false`|`string`|
 |**`onClickButtonLockedPage`**|Function to be used when the user taps the button on the locked application page|Kills the app by throwing `Quit application`|`false`|`any`|
 |**`passwordComponent`**|Component to be used to indicate to the user how many characters he/she typed|Dots growing or shrinking when the user adds or removes a character in the PIN code|`false`|`any`|
 |**`passwordLength`**|Length of the password the user has to enter|`4`|`false`|`number`|
@@ -92,8 +96,59 @@ import PINCode from '@haskkor/react-native-pincode'
 |**`titleConfirm`**|String used as a title on the PIN confirm page|`2 - Confirm your PIN Code`|`false`|`string`|
 |**`titleConfirmFailed`**|String used as a title on the PIN confirm page when the user enters a wrong PIN code|`Your entries did not match`|`false`|`string`|
 |**`titleEnter`**|String used as a title on the PIN enter page|`Enter your PIN Code`|`false`|`string`|
+|**`touchIDDisabled`**|Boolean disabling the TouchID/FaceID on the PIN code enter page|`false`|`false`|`boolean`|
 |**`touchIDSentence`**|String to be used in the TouchID/FaceID popup|`To unlock your application`|`false`|`string`|
+
+## Styles
+
+| Key | Description | Default | Type |
+|---|---|---|---|
+|**`colorPassword`**|Color of the dots used for the password component|`turquoise`|`string`|
+|**`colorPasswordError`**|Color of the dots used for the password component on error state|`#9DAFC8`|`string`|
+|**`numbersButtonOverlayColor`**|Color of the PIN panel buttons when `highlighted`|`turquoise`|`false`|`string`|
+|**`styleMainContainer`**|Main container of index file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeChooseContainer`**|Main container of PinCodeChoose file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeEnterContainer`**|Main container of PinCodeEnter file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
+|**`styleLockScreenButton`**|Button of the lock screen|`backgroundColor: colors.turquoise, borderRadius: grid.border, paddingLeft: grid.unit * 2, paddingRight: grid.unit * 2, paddingBottom: grid.unit, paddingTop: grid.unit`|`StyleProp<ViewStyle>`|
+|**`styleLockScreenColorIcon`**|Color of the icon on the lock screen|`white`|`string`|
+|**`styleLockScreenMainContainer`**|Main container of the lock screen|`position: 'absolute', top: 0, backgroundColor: colors.background, flexBasis: 0, left: 0, height: '100%', width: '100%', alignItems: 'center', flex: 1, justifyContent: 'center'`|`StyleProp<ViewStyle>`|
+|**`styleLockScreenNameIcon`**|Name of the material icon to be used on the lock screen|`lock`|`string`|
+|**`styleLockScreenSizeIcon`**|Size of the icon on the lock screen|`24`|`number`|
+|**`styleLockScreenText`**|Text on the lock screen (Come back..., To protect...)|`fontSize: grid.unit, color: colors.base, lineHeight: grid.unit * grid.lineHeight, textAlign: 'center'`|`StyleProp<TextStyle>`|
+|**`styleLockScreenTextButton`**|Text of the button of the lock screen|`color: colors.white, fontWeight: 'bold', fontSize: 14`|`StyleProp<TextStyle>`|
+|**`styleLockScreenTextTimer`**|Text of the timer of the lock screen|`fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', fontSize: 20, color: colors.base`|`StyleProp<TextStyle>`|
+|**`styleLockScreenTitle`**|Title of the lock screen|`fontSize: grid.navIcon, color: colors.base, opacity: grid.mediumOpacity, fontWeight: '200', marginBottom: grid.unit * 4`|`StyleProp<TextStyle>`|
+|**`styleLockScreenViewCloseButton`**|View of the button close of the lock screen|`alignItems: 'center', opacity: grid.mediumOpacity, justifyContent: 'center', marginTop: grid.unit * 2`|`StyleProp<ViewStyle>`|
+|**`styleLockScreenViewIcon`**|View containing the icon of the lock screen|`width: grid.unit * 4, justifyContent: 'center', alignItems: 'center', height: grid.unit * 4, borderRadius: grid.unit * 2, opacity: grid.mediumOpacity, backgroundColor: colors.alert, overflow: 'hidden', marginBottom: grid.unit * 4`|`StyleProp<ViewStyle>`|
+|**`styleLockScreenViewTextLock`**|View containing all the text of the lock screen|`justifyContent: 'center', alignItems: 'center', paddingLeft: grid.unit * 3, paddingRight: grid.unit * 3, flex: 3`|`StyleProp<ViewStyle>`|
+|**`styleLockScreenViewTimer`**|View of the timer of the lock screen|`paddingLeft: 30, paddingRight: 30, paddingBottom: 10, paddingTop: 10, borderRadius: 4, borderWidth: 2, borderColor: 'rgb(230, 231, 233)', marginBottom: grid.unit * 4`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeButtonCircle`**|Circle button TouchableHighlight of the PinCode file|`alignItems: 'center', justifyContent: 'center', width: grid.unit * 4, height: grid.unit * 4, backgroundColor: 'rgb(242, 245, 251)', borderRadius: grid.unit * 2`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeButtonNumber`**|Color of the number buttons on the Pin code page|'white'|`string`|
+|**`stylePinCodeButtonNumberPressed`**|Color of the number buttons on the Pin code page when pressed|`#9DAFC8`|`string`|
+|**`stylePinCodeColorSubtitle`**|Color of the PinCode page subtitle in normal state|`#9DAFC8`|`string`|
+|**`stylePinCodeColorSubtitleError`**|Color of the the PinCode page subtitle in error state|`#FC4349`|`string`|
+|**`stylePinCodeColorTitle`**|Color of the the PinCode page title in normal state|`#9DAFC8`|`string`|
+|**`stylePinCodeColorTitleError`**|Color of the the PinCode page title in error state|`#9DAFC8`|`string`|
+|**`stylePinCodeColumnButtons`**|Column of buttons of the PinCode file|`alignItems: 'center', width: 'auto'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeColumnDeleteButton`**|Column of the delete button of the PinCode file|`width: grid.unit * 4, height: grid.unit * 4, marginLeft: grid.unit / 2, marginRight: grid.unit / 2, justifyContent: 'center', alignItems: 'center', flexDirection: 'column'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeDeleteButtonColorHideUnderlay`**|Color of the delete button when underlay is hidden of the PinCode file|`rgb(211, 213, 218)`|`string`|
+|**`stylePinCodeDeleteButtonColorShowUnderlay`**|Color of the delete button when underlay is shown of the PinCode file|`colors.turquoise`|`string`|
+|**`stylePinCodeDeleteButtonIcon`**|Name of the icon of the delete button of the PinCode file|`backspace`|`string`|
+|**`stylePinCodeDeleteButtonSize`**|Size of the icon of the delete button of the PinCode file|`30`|`number`|
+|**`stylePinCodeDeleteButtonText`**|Text of the delete button of the PinCode file|`fontWeight: '200', marginTop: 5`|`StyleProp<TextStyle>`|
+|**`stylePinCodeEmptyColumn`**|Empty column of the last line of buttons of the PinCode file|`width: grid.unit * 4, height: grid.unit * 4`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeHiddenPasswordCircle`**|Circle representing the hidden password of the PinCode file|`flexDirection: 'row', height: 'auto', justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeMainContainer`**|Main container of the PinCode file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeRowButtons`**|Row of buttons of the PinCode file|`justifyContent: 'center', alignItems: 'center', width: '100%', height: grid.unit * 5.5`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeTextButtonCircle`**|Text of circle button TouchableHighlight of the PinCode file|`fontSize: grid.unit * 2, fontWeight: '200'`|`StyleProp<TextStyle>`|
+|**`stylePinCodeTextSubtitle`**|Title of the PinCode file|`fontSize: 20, fontWeight: '200', lineHeight: grid.unit * 2.5`|`StyleProp<TextStyle>`|
+|**`stylePinCodeTextTitle`**|Subtitle of the PinCode file|`fontSize: grid.unit, fontWeight: '200', textAlign: 'center'`|`StyleProp<TextStyle>`|
+|**`stylePinCodeViewTitle`**|View of the title of the PinCode file|`flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: grid.unit * 4`|`StyleProp<TextStyle>`|
+
+## [Changelog](https://github.com/Haskkor/react-native-pincode/blob/master/CHANGELOG.md)
 
 ## Contributing
 
 Pull requests are welcome.
+
+## [License](https://github.com/Haskkor/react-native-pincode/blob/master/LICENSE)

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import {AsyncStorage, StyleSheet, View} from 'react-native'
+import {AsyncStorage, StyleProp, StyleSheet, TextStyle, View, ViewStyle} from 'react-native'
 import PinCode, {PinStatus} from './PinCode'
 import TouchID from 'react-native-touch-id'
 import * as Keychain from 'react-native-keychain'
@@ -24,15 +24,42 @@ export type IProps = {
   passwordComponent: any
   titleAttemptFailed?: string
   finishProcess?: any
+  iconButtonDeleteDisabled?: boolean
   titleConfirmFailed?: string
   subtitleError?: string
+  buttonDeleteText?: string
   colorPassword?: string
+  colorPasswordError?: string
   numbersButtonOverlayColor?: string
   buttonDeleteComponent: any
   titleComponent: any
   subtitleComponent: any
   timePinLockedAsyncStorageName: string
   pinAttemptsAsyncStorageName: string
+  touchIDDisabled: boolean
+  styleContainerPinCode?: StyleProp<ViewStyle>
+  styleColorTitle?: string
+  styleColorTitleError?: string
+  styleColorSubtitle?: string
+  styleColorSubtitleError?: string
+  styleButtonCircle?: StyleProp<ViewStyle>
+  styleTextButton?: StyleProp<TextStyle>
+  styleCircleHiddenPassword?: StyleProp<ViewStyle>
+  styleRowButtons?: StyleProp<ViewStyle>
+  styleColumnButtons?: StyleProp<ViewStyle>
+  styleEmptyColumn?: StyleProp<ViewStyle>
+  styleViewTitle?: StyleProp<ViewStyle>
+  styleTextTitle?: StyleProp<TextStyle>
+  styleTextSubtitle?: StyleProp<TextStyle>
+  styleContainer?: StyleProp<ViewStyle>
+  styleColumnDeleteButton?: StyleProp<ViewStyle>
+  styleDeleteButtonColorShowUnderlay?: string
+  styleDeleteButtonColorHideUnderlay?: string
+  styleDeleteButtonIcon?: string
+  styleDeleteButtonSize?: number
+  styleDeleteButtonText?: StyleProp<TextStyle>
+  styleColorButtonTitle?: string
+  styleColorButtonTitleSelected?: string
 }
 
 export type IState = {
@@ -57,19 +84,23 @@ class PinCodeEnter extends React.PureComponent<IProps, IState> {
   }
 
   async componentWillMount() {
-    this.keyChainResult = await Keychain.getGenericPassword()
+    if (!this.props.storedPin) {
+      this.keyChainResult = await Keychain.getGenericPassword()
+    }
   }
 
   componentDidMount() {
-    TouchID.isSupported()
-      .then(() => {
-        setTimeout(() => {
-          this.launchTouchID()
+    if (!this.props.touchIDDisabled) {
+      TouchID.isSupported()
+        .then(() => {
+          setTimeout(() => {
+            this.launchTouchID()
+          })
         })
-      })
-      .catch((error: any) => {
-        console.warn('TouchID error', error)
-      })
+        .catch((error: any) => {
+          console.warn('TouchID error', error)
+        })
+    }
   }
 
   endProcess = async (pinCode?: string) => {
@@ -85,8 +116,8 @@ class PinCodeEnter extends React.PureComponent<IProps, IState> {
     if (pin === pinCode) {
       this.setState({pinCodeStatus: PinResultStatus.success})
       AsyncStorage.multiRemove([this.props.pinAttemptsAsyncStorageName, this.props.timePinLockedAsyncStorageName])
-      if (this.props.finishProcess) this.props.finishProcess()
       this.props.changeInternalStatus(PinResultStatus.success)
+      if (this.props.finishProcess) this.props.finishProcess()
     } else {
       pinAttempts++
       if (+pinAttempts >= this.props.maxAttempts) {
@@ -113,7 +144,7 @@ class PinCodeEnter extends React.PureComponent<IProps, IState> {
   render() {
     const pin = this.props.storedPin || (this.keyChainResult && this.keyChainResult.password)
     return (
-      <View style={styles.container}>
+      <View style={this.props.styleContainer ? this.props.styleContainer : styles.container}>
         <PinCode
           endProcess={this.endProcess}
           sentenceTitle={this.props.title}
@@ -123,15 +154,40 @@ class PinCodeEnter extends React.PureComponent<IProps, IState> {
           pinCodeStatus={this.state.pinCodeStatus}
           buttonNumberComponent={this.props.buttonNumberComponent || null}
           passwordLength={this.props.passwordLength || 4}
+          iconButtonDeleteDisabled={this.props.iconButtonDeleteDisabled}
           passwordComponent={this.props.passwordComponent || null}
           titleAttemptFailed={this.props.titleAttemptFailed || 'Incorrect PIN Code'}
           titleConfirmFailed={this.props.titleConfirmFailed || 'Your entries did not match'}
           subtitleError={this.props.subtitleError || 'Please try again'}
           colorPassword={this.props.colorPassword || undefined}
+          colorPasswordError={this.props.colorPasswordError || undefined}
           numbersButtonOverlayColor={this.props.numbersButtonOverlayColor || undefined}
           buttonDeleteComponent={this.props.buttonDeleteComponent || null}
           titleComponent={this.props.titleComponent || null}
-          subtitleComponent={this.props.subtitleComponent || null}/>
+          subtitleComponent={this.props.subtitleComponent || null}
+          styleButtonCircle={this.props.styleButtonCircle}
+          buttonDeleteText={this.props.buttonDeleteText}
+          styleTextButton={this.props.styleTextButton}
+          styleCircleHiddenPassword={this.props.styleCircleHiddenPassword}
+          styleRowButtons={this.props.styleRowButtons}
+          styleColumnButtons={this.props.styleColumnButtons}
+          styleEmptyColumn={this.props.styleEmptyColumn}
+          styleViewTitle={this.props.styleViewTitle}
+          styleTextTitle={this.props.styleTextTitle}
+          styleTextSubtitle={this.props.styleTextSubtitle}
+          styleContainer={this.props.styleContainerPinCode}
+          styleColumnDeleteButton={this.props.styleColumnDeleteButton}
+          styleDeleteButtonColorShowUnderlay={this.props.styleDeleteButtonColorShowUnderlay}
+          styleDeleteButtonColorHideUnderlay={this.props.styleDeleteButtonColorHideUnderlay}
+          styleDeleteButtonIcon={this.props.styleDeleteButtonIcon}
+          styleDeleteButtonSize={this.props.styleDeleteButtonSize}
+          styleColorTitle={this.props.styleColorTitle}
+          styleColorTitleError={this.props.styleColorTitleError}
+          styleColorSubtitle={this.props.styleColorSubtitle}
+          styleColorSubtitleError={this.props.styleColorSubtitleError}
+          styleDeleteButtonText={this.props.styleDeleteButtonText}
+          styleColorButtonTitle={this.props.styleColorButtonTitle}
+          styleColorButtonTitleSelected={this.props.styleColorButtonTitleSelected}/>
       </View>
     )
   }

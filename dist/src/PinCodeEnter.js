@@ -22,9 +22,9 @@ class PinCodeEnter extends React.PureComponent {
             if (pin === pinCode) {
                 this.setState({ pinCodeStatus: index_1.PinResultStatus.success });
                 react_native_1.AsyncStorage.multiRemove([this.props.pinAttemptsAsyncStorageName, this.props.timePinLockedAsyncStorageName]);
+                this.props.changeInternalStatus(index_1.PinResultStatus.success);
                 if (this.props.finishProcess)
                     this.props.finishProcess();
-                this.props.changeInternalStatus(index_1.PinResultStatus.success);
             }
             else {
                 pinAttempts++;
@@ -50,18 +50,22 @@ class PinCodeEnter extends React.PureComponent {
         }
     }
     async componentWillMount() {
-        this.keyChainResult = await Keychain.getGenericPassword();
+        if (!this.props.storedPin) {
+            this.keyChainResult = await Keychain.getGenericPassword();
+        }
     }
     componentDidMount() {
-        react_native_touch_id_1.default.isSupported()
-            .then(() => {
-            setTimeout(() => {
-                this.launchTouchID();
+        if (!this.props.touchIDDisabled) {
+            react_native_touch_id_1.default.isSupported()
+                .then(() => {
+                setTimeout(() => {
+                    this.launchTouchID();
+                });
+            })
+                .catch((error) => {
+                console.warn('TouchID error', error);
             });
-        })
-            .catch((error) => {
-            console.warn('TouchID error', error);
-        });
+        }
     }
     async launchTouchID() {
         try {
@@ -74,8 +78,8 @@ class PinCodeEnter extends React.PureComponent {
     }
     render() {
         const pin = this.props.storedPin || (this.keyChainResult && this.keyChainResult.password);
-        return (React.createElement(react_native_1.View, { style: styles.container },
-            React.createElement(PinCode_1.default, { endProcess: this.endProcess, sentenceTitle: this.props.title, subtitle: this.props.subtitle, status: PinCode_1.PinStatus.enter, previousPin: pin, pinCodeStatus: this.state.pinCodeStatus, buttonNumberComponent: this.props.buttonNumberComponent || null, passwordLength: this.props.passwordLength || 4, passwordComponent: this.props.passwordComponent || null, titleAttemptFailed: this.props.titleAttemptFailed || 'Incorrect PIN Code', titleConfirmFailed: this.props.titleConfirmFailed || 'Your entries did not match', subtitleError: this.props.subtitleError || 'Please try again', colorPassword: this.props.colorPassword || undefined, numbersButtonOverlayColor: this.props.numbersButtonOverlayColor || undefined, buttonDeleteComponent: this.props.buttonDeleteComponent || null, titleComponent: this.props.titleComponent || null, subtitleComponent: this.props.subtitleComponent || null })));
+        return (React.createElement(react_native_1.View, { style: this.props.styleContainer ? this.props.styleContainer : styles.container },
+            React.createElement(PinCode_1.default, { endProcess: this.endProcess, sentenceTitle: this.props.title, subtitle: this.props.subtitle, status: PinCode_1.PinStatus.enter, previousPin: pin, pinCodeStatus: this.state.pinCodeStatus, buttonNumberComponent: this.props.buttonNumberComponent || null, passwordLength: this.props.passwordLength || 4, iconButtonDeleteDisabled: this.props.iconButtonDeleteDisabled, passwordComponent: this.props.passwordComponent || null, titleAttemptFailed: this.props.titleAttemptFailed || 'Incorrect PIN Code', titleConfirmFailed: this.props.titleConfirmFailed || 'Your entries did not match', subtitleError: this.props.subtitleError || 'Please try again', colorPassword: this.props.colorPassword || undefined, colorPasswordError: this.props.colorPasswordError || undefined, numbersButtonOverlayColor: this.props.numbersButtonOverlayColor || undefined, buttonDeleteComponent: this.props.buttonDeleteComponent || null, titleComponent: this.props.titleComponent || null, subtitleComponent: this.props.subtitleComponent || null, styleButtonCircle: this.props.styleButtonCircle, buttonDeleteText: this.props.buttonDeleteText, styleTextButton: this.props.styleTextButton, styleCircleHiddenPassword: this.props.styleCircleHiddenPassword, styleRowButtons: this.props.styleRowButtons, styleColumnButtons: this.props.styleColumnButtons, styleEmptyColumn: this.props.styleEmptyColumn, styleViewTitle: this.props.styleViewTitle, styleTextTitle: this.props.styleTextTitle, styleTextSubtitle: this.props.styleTextSubtitle, styleContainer: this.props.styleContainerPinCode, styleColumnDeleteButton: this.props.styleColumnDeleteButton, styleDeleteButtonColorShowUnderlay: this.props.styleDeleteButtonColorShowUnderlay, styleDeleteButtonColorHideUnderlay: this.props.styleDeleteButtonColorHideUnderlay, styleDeleteButtonIcon: this.props.styleDeleteButtonIcon, styleDeleteButtonSize: this.props.styleDeleteButtonSize, styleColorTitle: this.props.styleColorTitle, styleColorTitleError: this.props.styleColorTitleError, styleColorSubtitle: this.props.styleColorSubtitle, styleColorSubtitleError: this.props.styleColorSubtitleError, styleDeleteButtonText: this.props.styleDeleteButtonText, styleColorButtonTitle: this.props.styleColorButtonTitle, styleColorButtonTitleSelected: this.props.styleColorButtonTitleSelected })));
     }
 }
 exports.default = PinCodeEnter;

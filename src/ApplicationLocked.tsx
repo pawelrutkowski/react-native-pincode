@@ -1,5 +1,5 @@
 import * as React from 'react'
-import {StyleSheet, View, Dimensions, TouchableOpacity, Text, AsyncStorage, Platform} from 'react-native'
+import {StyleSheet, View, TouchableOpacity, Text, AsyncStorage, Platform} from 'react-native'
 import {colors} from './design/colors'
 import {grid} from './design/grid'
 import Animate from 'react-move/Animate'
@@ -21,6 +21,19 @@ export type IProps = {
   iconComponent?: any
   timePinLockedAsyncStorageName: string
   pinAttemptsAsyncStorageName: string
+  styleButton?: any
+  styleTextButton?: any
+  styleViewTimer?: any
+  styleTextTimer?: any
+  styleTitle?: any
+  styleViewTextLock?: any
+  styleViewIcon?: any
+  colorIcon?: string
+  nameIcon?: string
+  sizeIcon?: number
+  styleMainContainer?: any
+  styleText?: any
+  styleViewButton?: any
 }
 
 export type IState = {
@@ -74,14 +87,16 @@ class ApplicationLocked extends React.PureComponent<IProps, IState> {
       } else {
         throw('Quit application')
       }
-    }} style={styles.button}>
-      <Text style={styles.closeButtonText}>{this.props.textButton}</Text>
+    }} style={this.props.styleButton ? this.props.styleButton : styles.button}>
+      <Text style={this.props.styleTextButton ? this.props.styleTextButton : styles.closeButtonText}>
+        {this.props.textButton}
+      </Text>
     </TouchableOpacity>)
   }
 
   renderTimer = (minutes: number, seconds: number) => {
-    return (<View style={styles.viewTimer}>
-      <Text style={styles.textTimer}>
+    return (<View style={this.props.styleViewTimer ? this.props.styleViewTimer : styles.viewTimer}>
+      <Text style={this.props.styleTextTimer ? this.props.styleTextTimer : styles.textTimer}>
         {`${minutes < 10 ? '0' + minutes : minutes}:${seconds < 10 ? '0' + seconds : seconds}`}
       </Text>
     </View>)
@@ -89,13 +104,17 @@ class ApplicationLocked extends React.PureComponent<IProps, IState> {
 
   renderTitle = () => {
     return (
-      <Text style={styles.title}>{this.props.textTitle || 'Maximum attempts reached'}</Text>
+      <Text style={this.props.styleTitle ? this.props.styleTitle : styles.title}>
+        {this.props.textTitle || 'Maximum attempts reached'}
+      </Text>
     )
   }
 
   renderIcon = () => {
-    return (<View style={styles.viewIcon}>
-      <Icon name="lock" size={24} color={colors.white}/>
+    return (<View style={this.props.styleViewIcon ? this.props.styleViewIcon : styles.viewIcon}>
+      <Icon name={this.props.nameIcon ? this.props.nameIcon : 'lock'}
+            size={this.props.sizeIcon ? this.props.sizeIcon : 24}
+            color={this.props.colorIcon ? this.props.colorIcon : colors.white}/>
     </View>)
   }
 
@@ -103,54 +122,56 @@ class ApplicationLocked extends React.PureComponent<IProps, IState> {
     const minutes = Math.floor(this.state.timeDiff / 1000 / 60)
     const seconds = Math.floor(this.state.timeDiff / 1000) % 60
     return (
-      <View style={styles.viewErrorLocked}>
-        <View style={styles.viewTextErrorLock}>
-          <Animate
-            show={true}
-            start={{
-              opacity: 0
-            }}
-            enter={{
-              opacity: [1],
-              timing: {delay: 1000, duration: 1500, ease: easeLinear}
-            }}>
-            {(state: any) => (
-              <View style={[styles.viewTextLock, {opacity: state.opacity}]}>
-                {this.props.titleComponent ? this.props.titleComponent() : this.renderTitle()}
-                {this.props.timerComponent ? this.props.timerComponent() : this.renderTimer(minutes, seconds)}
-                {this.props.iconComponent ? this.props.iconComponent() : this.renderIcon()}
-                <Text style={styles.text}>
-                  {this.props.textDescription ? this.props.textDescription :
-                    `To protect your information, access has been locked for ${Math.ceil(this.props.timeToLock / 1000 / 60)} minutes.`}
-                </Text>
+      <View>
+        <Animate
+          show={true}
+          start={{
+            opacity: 0
+          }}
+          enter={{
+            opacity: [1],
+            timing: {delay: 1000, duration: 1500, ease: easeLinear}
+          }}>
+          {(state: any) => (
+            <View style={[this.props.styleViewTextLock ? this.props.styleViewTextLock : styles.viewTextLock,
+              {opacity: state.opacity}]}>
+              {this.props.titleComponent ? this.props.titleComponent() : this.renderTitle()}
+              {this.props.timerComponent ? this.props.timerComponent() : this.renderTimer(minutes, seconds)}
+              {this.props.iconComponent ? this.props.iconComponent() : this.renderIcon()}
+              <Text style={this.props.styleText ? this.props.styleText : styles.text}>
+                {this.props.textDescription ? this.props.textDescription :
+                  `To protect your information, access has been locked for ${Math.ceil(this.props.timeToLock / 1000 / 60)} minutes.`}
+              </Text>
+              <Text style={this.props.styleText ? this.props.styleText : styles.text}>
+                Come back later and try again.
+              </Text>
+            </View>
+          )}
+        </Animate>
+        <Animate
+          show={true}
+          start={{
+            opacity: 0
+          }}
+          enter={{
+            opacity: [1],
+            timing: {delay: 2000, duration: 1500, ease: easeLinear}
+          }}>
+          {(state: any) => (
+            <View style={{opacity: state.opacity, flex: 1}}>
+              <View style={this.props.styleViewButton ? this.props.styleViewButton : styles.viewCloseButton}>
+                {this.props.buttonComponent ? this.props.buttonComponent() : this.renderButton()}
               </View>
-            )}
-          </Animate>
-          <Animate
-            show={true}
-            start={{
-              opacity: 0
-            }}
-            enter={{
-              opacity: [1],
-              timing: {delay: 2000, duration: 1500, ease: easeLinear}
-            }}>
-            {(state: any) => (
-              <View style={{opacity: state.opacity, flex: 1}}>
-                <View style={styles.viewCloseButton}>
-                  {this.props.buttonComponent ? this.props.buttonComponent() : this.renderButton()}
-                </View>
-              </View>
-            )}
-          </Animate>
-        </View>
+            </View>
+          )}
+        </Animate>
       </View>
     )
   }
 
   render() {
     return (
-      <View style={styles.container}>
+      <View style={this.props.styleMainContainer ? this.props.styleMainContainer : styles.container}>
         {this.renderErrorLocked()}
       </View>
     )
@@ -163,14 +184,8 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
-    flex: 1,
-    flexBasis: 0,
     backgroundColor: colors.background,
-    justifyContent: 'center'
-  },
-  viewTextErrorLock: {
-    position: 'absolute',
-    top: 0,
+    flexBasis: 0,
     left: 0,
     height: '100%',
     width: '100%',
@@ -184,11 +199,6 @@ const styles = StyleSheet.create({
     color: '#3C3F43',
     lineHeight: 20,
     textAlign: 'center'
-  },
-  viewErrorLocked: {
-    flex: 1,
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height
   },
   viewTextLock: {
     justifyContent: 'center',
@@ -250,7 +260,7 @@ const styles = StyleSheet.create({
     paddingTop: grid.unit
   },
   closeButtonText: {
-    color: colors.base,
+    color: colors.white,
     fontWeight: 'bold',
     fontSize: 14
   }
