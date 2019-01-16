@@ -1,6 +1,6 @@
 # react-native-pincode
 
-[![npm](https://img.shields.io/npm/v/@haskkor/react-native-pincode.svg)](https://www.npmjs.com/package/@haskkor/react-native-pincode) [![npm](https://img.shields.io/npm/dt/@haskkor/react-native-pincode.svg)](https://www.npmjs.com/package/@haskkor/react-native-pincode)
+[![npm](https://img.shields.io/npm/v/@haskkor/react-native-pincode.svg)](https://www.npmjs.com/package/@haskkor/react-native-pincode) [![npm](https://img.shields.io/npm/dt/@haskkor/react-native-pincode.svg)](https://www.npmjs.com/package/@haskkor/react-native-pincode) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 _A customizable PIN Code component for react native_
 
@@ -34,10 +34,20 @@ If you wish to use `Keychain/Keystore` to store the PIN code you will have to li
 react-native link react-native-keychain
 ```
 
+If you wish to use FaceID you'll need to add the permission in your info.plist
+
+```
+<key>NSFaceIDUsageDescription</key>
+<string>Enabling Face ID allows you quick and secure access to your account.</string>
+```
+
 _Please note that you might have to link those libraries manually._
 
 **IMPORTANT:**
 _If you decide not to use `Keychain/Keystore`, you will have to provide a **`storePin`** property to the `PINCode` component._
+
+The library uses the `Vibration` from [React Native](https://facebook.github.io/react-native/docs/vibration).
+_Please note that on Android it requires the Vibrate permission as stated in the doc. (add <uses-permission android:name="android.permission.VIBRATE"/> to AndroidManifest.xml)_
 
 ## Demo
 
@@ -55,25 +65,47 @@ import PINCode from '@haskkor/react-native-pincode'
 <PINCode status={'choose'}/>
 ```
 
+Package provides a promise to know if a PIN code has been set by the user.
+The `serviceName` parameter is optional. If provided, it should match the `pinCodeKeychainName` property.
+
+```
+import {hasUserSetPinCode} from '@haskkor/react-native-pincode'
+await hasUserSetPinCode(serviceName)
+```
+
+One can also use a provided function to delete a PIN code previously set in the Keychain.
+The `service name` parameter is optional. If provided, it should match the `pinCodeKeychainName` property.
+
+``` 
+import {deleteUserPinCode} from '@haskkor/react-native-pincode'
+await deleteUserPinCode(serviceName)
+```
+
 ## Options
 
 | Key | Description | Default | Required | Type |
 |---|---|---|---|---|
+|**`bottomLeftComponent`**|Component to replace the empty space at the bottom left of the numpad|Empty space|`false`|`any`|
 |**`buttonComponentLockedPage`**|Button component to be used at the bottom of the page on the locked application page|TouchableOpacity exit button killing the application|`false`|`any`|
 |**`buttonDeleteComponent`**|Button component to be used at the bottom right of the PIN panel to delete a previous entry|TouchableHighlight button with a `delete` text and the `backspace` material icon|`false`|`any`|
 |**`buttonDeleteText`**|Text of the of the button used to delete a previous entry on the PIN panel|`delete`|`false`|`string`|
 |**`buttonNumberComponent`**|Button component to be used on the PIN panel to select a character for the PIN|TouchableHighlight button with a number text|`false`|`any`|
+|**`disableLockScreen`**|Boolean to disable the lock screen|`false`|`false`|`boolean`|
+|**`endProcessFunction`**|Function to handle the end of the process|`None`|`false`|`(pinCode: string) => void`|
 |**`finishProcess`**|Function to be used when the user enters the right PIN code|Removes the values in AsyncStorage and set the status to `success`|`false`|`any`|
+|**`getCurrentPinLength`**|Function returning the length of the current PIN code|`None`|`false`|`(length: number) => void`|
 |**`handleResultEnterPin`**|Function to be used to handle the PIN code entered by the user. To be used with the **`pinStatus`** props|Functions that checks the validity of the give PIN code, stores the number of failed attempts in the `AsyncStorage` and the time the application was locked if needed|`false`|`any`|
 |**`iconComponentLockedPage`**|View component to be used between the timer and the text on the locked application page|A circular red View using the `lock` material icon|`false`|`any`|
 |**`iconButtonDeleteDisabled`**|Boolean to remove the icon on the delete button of the PIN panel|`false`|`false`|`boolean`|
 |**`lockedPage`**|View component used as a locked page if the user fails to provide the correct PIN code `maxAttempts` times|A application locked page with a timer indicating to the user the remaining time locked and a button closing the application|`false`|`any`|
 |**`maxAttempts`**|Number of attempts the user is given before locking the application|`3`|`false`|`number`|
 |**`onClickButtonLockedPage`**|Function to be used when the user taps the button on the locked application page|Kills the app by throwing `Quit application`|`false`|`any`|
-|**`passwordComponent`**|Component to be used to indicate to the user how many characters he/she typed|Dots growing or shrinking when the user adds or removes a character in the PIN code|`false`|`any`|
+|**`onFail`**|Function to be used when the user enters the wrong PIN code|Returns number of failed attempts|`false`|`any`|
+|**`passwordComponent`**|Component to be used to indicate to the user how many characters he/she typed. To be used with the **`getCurrentPinLength`** prop|Dots growing or shrinking when the user adds or removes a character in the PIN code|`false`|`any`|
 |**`passwordLength`**|Length of the password the user has to enter|`4`|`false`|`number`|
 |**`pinAttemptsAsyncStorageName`**|String to be used as a key in AsyncStorage to store the number of attempts the user already made|`pinAttemptsRNPin`|`false`|`string`|
 |**`pinCodeKeychainName`**|String to be used as a key to store the PIN code in Keychain/Keystore|`reactNativePinCode`|`false`|`string`|
+|**`pinCodeVisible`**|Boolean to show/hide the PIN code typed by the user|*None*|`false`|`boolean`|
 |**`pinStatus`**|Status coming back to the PIN component after the **`handleResultEnterPin`** function. The status type is a value of the `PinResultStatus` enum (`initial`, `success`, `failure`, `locked`)|`None`|`false`|`PinResultStatus` enum|
 |**`status`**|Indicates the mode that should be used (see _Usage_ section for the different modes available)|*None*|`true`|`choose` or `enter` or `locked`|
 |**`storedPin`**|The PIN code previously stored with the `storePin` function|The PIN Code previously stored in the Keychain/Keystore|`false`|`string`|
@@ -85,6 +117,9 @@ import PINCode from '@haskkor/react-native-pincode'
 |**`subtitleError`**|String used as a subtitle on the PIN code pages when an error occurs (wrong PIN code used for `enter` or `confirm` modes)|`Please try again`|`false`|`string`|
 |**`textButtonLockedPage`**|String to be used as text on the button in the locked application page|`Quit`|`false`|`string`|
 |**`textDescriptionLockedPage`**|String to be used as a description on the locked application page|`To protect your information, access has been locked for {timeLocked} minutes.`|`false`|`string`|
+|**`textSubDescriptionLockedPage`**|String to be used as a subtitle on the locked application page|`Come back later and try again.`|`false`|`string`|
+|**`textPasswordVisibleFamily`**|Font to be used for the PIN code numbers when `pinCodeVisible` is true|`system font`|`false`|`string`|
+|**`textPasswordVisibleSize`**|Size of the font used for the PIN code numbers when `pinCodeVisible` is true|`22`|`false`|`number`|
 |**`textTitleLockedPage`**|String to be used as a title on the locked application page|`Maximum attempts reached`|`false`|`string`|
 |**`timeLocked`**|Number of milliseconds where the application should be locked after `maxAttempts` failed attempts from the user|`300000` (5 minutes)|`false`|`number`|
 |**`timePinLockedAsyncStorageName`**|String to be used as a key in AsyncStorage to store the time when the user locks the application|`timePinLockedRNPin`|`false`|`string`|
@@ -96,8 +131,10 @@ import PINCode from '@haskkor/react-native-pincode'
 |**`titleConfirm`**|String used as a title on the PIN confirm page|`2 - Confirm your PIN Code`|`false`|`string`|
 |**`titleConfirmFailed`**|String used as a title on the PIN confirm page when the user enters a wrong PIN code|`Your entries did not match`|`false`|`string`|
 |**`titleEnter`**|String used as a title on the PIN enter page|`Enter your PIN Code`|`false`|`string`|
+|**`titleValidationFailed`**|String used as a title on the PIN choose page when the PIN code entered by the user does not match the provided RegExp (use with `validationRegex` property|`PIN code unsafe`|`false`|`string`|
 |**`touchIDDisabled`**|Boolean disabling the TouchID/FaceID on the PIN code enter page|`false`|`false`|`boolean`|
 |**`touchIDSentence`**|String to be used in the TouchID/FaceID popup|`To unlock your application`|`false`|`string`|
+|**`validationRegex`**|Regex to be used to validate the PIN code entered by the user on `choose` mode|*None*|`false`|`RegExp`|
 
 ## Styles
 
@@ -105,7 +142,7 @@ import PINCode from '@haskkor/react-native-pincode'
 |---|---|---|---|
 |**`colorPassword`**|Color of the dots used for the password component|`turquoise`|`string`|
 |**`colorPasswordError`**|Color of the dots used for the password component on error state|`#9DAFC8`|`string`|
-|**`numbersButtonOverlayColor`**|Color of the PIN panel buttons when `highlighted`|`turquoise`|`false`|`string`|
+|**`numbersButtonOverlayColor`**|Color of the PIN panel buttons when `highlighted`|`turquoise`|`string`|
 |**`styleMainContainer`**|Main container of index file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
 |**`stylePinCodeChooseContainer`**|Main container of PinCodeChoose file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
 |**`stylePinCodeEnterContainer`**|Main container of PinCodeEnter file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
@@ -138,6 +175,8 @@ import PINCode from '@haskkor/react-native-pincode'
 |**`stylePinCodeDeleteButtonText`**|Text of the delete button of the PinCode file|`fontWeight: '200', marginTop: 5`|`StyleProp<TextStyle>`|
 |**`stylePinCodeEmptyColumn`**|Empty column of the last line of buttons of the PinCode file|`width: grid.unit * 4, height: grid.unit * 4`|`StyleProp<ViewStyle>`|
 |**`stylePinCodeHiddenPasswordCircle`**|Circle representing the hidden password of the PinCode file|`flexDirection: 'row', height: 'auto', justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
+|**`stylePinCodeHiddenPasswordSizeEmpty`**|Size of the circle representing the hidden password of the PinCode file when empty|`4`|`number`|
+|**`stylePinCodeHiddenPasswordSizeFull`**|Size of the circle representing the hidden password of the PinCode file when full|`8`|`number`|
 |**`stylePinCodeMainContainer`**|Main container of the PinCode file|`flex: 1, justifyContent: 'center', alignItems: 'center'`|`StyleProp<ViewStyle>`|
 |**`stylePinCodeRowButtons`**|Row of buttons of the PinCode file|`justifyContent: 'center', alignItems: 'center', width: '100%', height: grid.unit * 5.5`|`StyleProp<ViewStyle>`|
 |**`stylePinCodeTextButtonCircle`**|Text of circle button TouchableHighlight of the PinCode file|`fontSize: grid.unit * 2, fontWeight: '200'`|`StyleProp<TextStyle>`|

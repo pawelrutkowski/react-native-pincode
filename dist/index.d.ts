@@ -1,15 +1,19 @@
 /// <reference path="../src/types.d.ts" />
 /// <reference types="react" />
-import * as React from 'react';
-import { StyleProp, ViewStyle, TextStyle } from 'react-native';
+import * as React from "react";
+import { StyleProp, ViewStyle, TextStyle } from "react-native";
 export declare type IProps = {
+    bottomLeftComponent?: any;
     buttonComponentLockedPage?: any;
     buttonDeleteComponent?: any;
     buttonDeleteText?: string;
     buttonNumberComponent?: any;
     colorPassword?: string;
     colorPasswordError?: string;
+    disableLockScreen?: boolean;
+    endProcessFunction?: (pinCode: string) => void;
     finishProcess?: any;
+    getCurrentPinLength?: (length: number) => void;
     handleResultEnterPin?: any;
     iconComponentLockedPage?: any;
     iconButtonDeleteDisabled?: boolean;
@@ -17,12 +21,14 @@ export declare type IProps = {
     maxAttempts?: number;
     numbersButtonOverlayColor?: string;
     onClickButtonLockedPage?: any;
+    onFail?: any;
     passwordComponent?: any;
     passwordLength?: number;
     pinAttemptsAsyncStorageName?: string;
     pinCodeKeychainName?: string;
+    pinCodeVisible?: boolean;
     pinStatus?: PinResultStatus;
-    status: 'choose' | 'enter' | 'locked';
+    status: "choose" | "enter" | "locked";
     storedPin?: string;
     storePin?: any;
     styleMainContainer?: StyleProp<ViewStyle>;
@@ -57,6 +63,8 @@ export declare type IProps = {
     stylePinCodeDeleteButtonText?: StyleProp<TextStyle>;
     stylePinCodeEmptyColumn?: StyleProp<ViewStyle>;
     stylePinCodeHiddenPasswordCircle?: StyleProp<ViewStyle>;
+    stylePinCodeHiddenPasswordSizeEmpty?: number;
+    stylePinCodeHiddenPasswordSizeFull?: number;
     stylePinCodeMainContainer?: StyleProp<ViewStyle>;
     stylePinCodeRowButtons?: StyleProp<ViewStyle>;
     stylePinCodeTextButtonCircle?: StyleProp<TextStyle>;
@@ -70,6 +78,9 @@ export declare type IProps = {
     subtitleError?: string;
     textButtonLockedPage?: string;
     textDescriptionLockedPage?: string;
+    textSubDescriptionLockedPage?: string;
+    textPasswordVisibleFamily?: string;
+    textPasswordVisibleSize?: number;
     textTitleLockedPage?: string;
     timeLocked?: number;
     timePinLockedAsyncStorageName?: string;
@@ -81,8 +92,10 @@ export declare type IProps = {
     titleConfirm?: string;
     titleConfirmFailed?: string;
     titleEnter?: string;
+    titleValidationFailed?: string;
     touchIDDisabled?: boolean;
     touchIDSentence?: string;
+    validationRegex?: RegExp;
 };
 export declare type IState = {
     internalPinStatus: PinResultStatus;
@@ -101,4 +114,6 @@ declare class PINCode extends React.PureComponent<IProps, IState> {
     renderLockedPage: () => JSX.Element;
     render(): JSX.Element;
 }
+export declare function hasUserSetPinCode(serviceName?: string): Promise<boolean>;
+export declare function deleteUserPinCode(serviceName?: string): Promise<void>;
 export default PINCode;

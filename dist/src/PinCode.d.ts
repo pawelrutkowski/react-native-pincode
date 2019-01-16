@@ -5,7 +5,9 @@ import { StyleProp, TextStyle, ViewStyle } from 'react-native';
  * Pin Code Component
  */
 export declare type IProps = {
-    endProcess: (pinCode: string) => void;
+    endProcess: (pinCode: string, isErrorValidation?: boolean) => void;
+    emptyColumnComponent: any;
+    getCurrentLength?: (length: number) => void;
     sentenceTitle: string;
     subtitle: string;
     status: PinStatus;
@@ -17,8 +19,8 @@ export declare type IProps = {
     passwordLength: number;
     iconButtonDeleteDisabled?: boolean;
     passwordComponent?: any;
-    titleAttemptFailed: string;
-    titleConfirmFailed: string;
+    titleAttemptFailed?: string;
+    titleConfirmFailed?: string;
     subtitleError: string;
     colorPassword?: string;
     colorPasswordError?: string;
@@ -29,6 +31,8 @@ export declare type IProps = {
     styleButtonCircle?: StyleProp<ViewStyle>;
     styleTextButton?: StyleProp<TextStyle>;
     styleCircleHiddenPassword?: StyleProp<ViewStyle>;
+    styleCircleSizeEmpty?: number;
+    styleCircleSizeFull?: number;
     styleRowButtons?: StyleProp<ViewStyle>;
     styleColumnButtons?: StyleProp<ViewStyle>;
     styleEmptyColumn?: StyleProp<ViewStyle>;
@@ -48,6 +52,11 @@ export declare type IProps = {
     styleColorSubtitleError?: string;
     styleColorButtonTitle?: string;
     styleColorButtonTitleSelected?: string;
+    pinCodeVisible?: boolean;
+    textPasswordVisibleSize?: number;
+    textPasswordVisibleFamily?: string;
+    validationRegex?: RegExp;
+    titleValidationFailed?: string;
 };
 export declare type IState = {
     password: string;
@@ -67,15 +76,18 @@ export declare enum PinStatus {
     enter = "enter",
 }
 declare class PinCode extends React.PureComponent<IProps, IState> {
+    private readonly _circleSizeEmpty;
+    private readonly _circleSizeFull;
     constructor(props: IProps);
-    componentWillUpdate(nextProps: IProps): void;
+    componentDidMount(): void;
+    componentDidUpdate(prevProps: Readonly<IProps>): void;
     failedAttempt: () => Promise<void>;
     newAttempt: () => Promise<void>;
     onPressButtonNumber: (text: string) => Promise<void>;
     renderButtonNumber: (text: string) => JSX.Element;
     endProcess: (pwd: string) => void;
     doShake(): Promise<void>;
-    showError(): Promise<void>;
+    showError(isErrorValidation?: boolean): Promise<void>;
     renderCirclePassword: () => JSX.Element;
     renderButtonDelete: (opacity: number) => JSX.Element;
     renderTitle: (colorTitle: string, opacityTitle: number, attemptFailed: boolean, showError: boolean) => JSX.Element;

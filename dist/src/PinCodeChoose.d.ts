@@ -1,7 +1,7 @@
 /// <reference types="react" />
-import * as React from 'react';
-import { StyleProp, TextStyle, ViewStyle } from 'react-native';
-import { PinStatus } from './PinCode';
+import * as React from "react";
+import { StyleProp, TextStyle, ViewStyle } from "react-native";
+import { PinStatus } from "./PinCode";
 /**
  * Pin Code Choose PIN Page
  */
@@ -27,14 +27,18 @@ export declare type IProps = {
     titleComponent: any;
     subtitleComponent: any;
     pinCodeKeychainName: string;
+    getCurrentLength?: (length: number) => void;
     styleContainerPinCode?: StyleProp<ViewStyle>;
     styleColorTitle?: string;
     styleColorTitleError?: string;
     styleColorSubtitle?: string;
+    emptyColumnComponent: any;
     styleColorSubtitleError?: string;
     styleButtonCircle?: StyleProp<ViewStyle>;
     styleTextButton?: StyleProp<TextStyle>;
     styleCircleHiddenPassword?: StyleProp<ViewStyle>;
+    styleCircleSizeEmpty?: number;
+    styleCircleSizeFull?: number;
     styleRowButtons?: StyleProp<ViewStyle>;
     styleColumnButtons?: StyleProp<ViewStyle>;
     styleEmptyColumn?: StyleProp<ViewStyle>;
@@ -50,6 +54,11 @@ export declare type IProps = {
     styleDeleteButtonText?: StyleProp<TextStyle>;
     styleColorButtonTitle?: string;
     styleColorButtonTitleSelected?: string;
+    pinCodeVisible?: boolean;
+    textPasswordVisibleSize?: number;
+    textPasswordVisibleFamily?: string;
+    titleValidationFailed?: string;
+    validationRegex?: RegExp;
 };
 export declare type IState = {
     status: PinStatus;
@@ -57,7 +66,7 @@ export declare type IState = {
 };
 declare class PinCodeChoose extends React.PureComponent<IProps, IState> {
     constructor(props: IProps);
-    endProcessCreation: (pinCode: string) => void;
+    endProcessCreation: (pinCode: string, isErrorValidation?: boolean | undefined) => void;
     endProcessConfirm: (pinCode: string) => Promise<void>;
     cancelConfirm: () => void;
     render(): JSX.Element;

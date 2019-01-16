@@ -10,13 +10,13 @@ import {
   View,
   ViewStyle
 } from 'react-native'
-import {Col, Row, Grid} from 'react-native-easy-grid'
-import {grid} from './design/grid'
-import {colors} from './design/colors'
+import { Col, Row, Grid } from 'react-native-easy-grid'
+import { grid } from './design/grid'
+import { colors } from './design/colors'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import * as _ from 'lodash'
 import Animate from 'react-move/Animate'
-import {easeLinear} from 'd3-ease'
+import { easeLinear } from 'd3-ease'
 import delay from './delay'
 
 /**
@@ -24,7 +24,9 @@ import delay from './delay'
  */
 
 export type IProps = {
-  endProcess: (pinCode: string) => void
+  endProcess: (pinCode: string, isErrorValidation?: boolean) => void
+  emptyColumnComponent: any
+  getCurrentLength?: (length: number) => void
   sentenceTitle: string
   subtitle: string
   status: PinStatus
@@ -36,8 +38,8 @@ export type IProps = {
   passwordLength: number
   iconButtonDeleteDisabled?: boolean
   passwordComponent?: any
-  titleAttemptFailed: string
-  titleConfirmFailed: string
+  titleAttemptFailed?: string
+  titleConfirmFailed?: string
   subtitleError: string
   colorPassword?: string
   colorPasswordError?: string
@@ -48,6 +50,8 @@ export type IProps = {
   styleButtonCircle?: StyleProp<ViewStyle>
   styleTextButton?: StyleProp<TextStyle>
   styleCircleHiddenPassword?: StyleProp<ViewStyle>
+  styleCircleSizeEmpty?: number
+  styleCircleSizeFull?: number
   styleRowButtons?: StyleProp<ViewStyle>
   styleColumnButtons?: StyleProp<ViewStyle>
   styleEmptyColumn?: StyleProp<ViewStyle>
@@ -67,11 +71,16 @@ export type IProps = {
   styleColorSubtitleError?: string
   styleColorButtonTitle?: string
   styleColorButtonTitleSelected?: string
+  pinCodeVisible?: boolean
+  textPasswordVisibleSize?: number
+  textPasswordVisibleFamily?: string
+  validationRegex?: RegExp
+  titleValidationFailed?: string
 }
 
 export type IState = {
-  password: string,
-  moveData: { x: number, y: number }
+  password: string
+  moveData: { x: number; y: number }
   showError: boolean
   textButtonSelected: string
   colorDelete: string
@@ -88,57 +97,85 @@ export enum PinStatus {
 const textDeleteButtonDefault = 'delete'
 
 class PinCode extends React.PureComponent<IProps, IState> {
+  private readonly _circleSizeEmpty: number
+  private readonly _circleSizeFull: number
 
   constructor(props: IProps) {
     super(props)
     this.state = {
       password: '',
-      moveData: {x: 0, y: 0},
+      moveData: { x: 0, y: 0 },
       showError: false,
       textButtonSelected: '',
-      colorDelete: 'rgb(211, 213, 218)',
+      colorDelete: this.props.styleDeleteButtonColorHideUnderlay
+        ? this.props.styleDeleteButtonColorHideUnderlay
+        : 'rgb(211, 213, 218)',
       attemptFailed: false,
       changeScreen: false
     }
-    this.renderButtonNumber = this.renderButtonNumber.bind(this)
-    this.renderCirclePassword = this.renderCirclePassword.bind(this)
-    this.doShake = this.doShake.bind(this)
-    this.showError = this.showError.bind(this)
-    this.endProcess = this.endProcess.bind(this)
-    this.failedAttempt = this.failedAttempt.bind(this)
-    this.newAttempt = this.newAttempt.bind(this)
-    this.renderButtonDelete = this.renderButtonDelete.bind(this)
-    this.onPressButtonNumber = this.onPressButtonNumber.bind(this)
-    this.renderTitle = this.renderTitle.bind(this)
+    this._circleSizeEmpty = this.props.styleCircleSizeEmpty || 4
+    this._circleSizeFull =
+      this.props.styleCircleSizeFull || (this.props.pinCodeVisible ? 6 : 8)
   }
 
-  componentWillUpdate(nextProps: IProps) {
-    if (this.props.pinCodeStatus !== 'failure' && nextProps.pinCodeStatus === 'failure') {
+  componentDidMount() {
+    if (this.props.getCurrentLength) this.props.getCurrentLength(0)
+  }
+
+  componentDidUpdate(prevProps: Readonly<IProps>): void {
+    if (
+      prevProps.pinCodeStatus !== 'failure' &&
+      this.props.pinCodeStatus === 'failure'
+    ) {
       this.failedAttempt()
+    }
+    if (
+      prevProps.pinCodeStatus !== 'locked' &&
+      this.props.pinCodeStatus === 'locked'
+    ) {
+      this.setState({ password: '' })
     }
   }
 
   failedAttempt = async () => {
-    this.setState({changeScreen: true})
+    this.setState({ changeScreen: true })
     await delay(300)
-    this.setState({showError: true, attemptFailed: true, changeScreen: false, password: ''})
+    this.setState({
+      showError: true,
+      attemptFailed: true,
+      changeScreen: false,
+      password: ''
+    })
     this.doShake()
   }
 
   newAttempt = async () => {
-    this.setState({changeScreen: true})
+    this.setState({ changeScreen: true })
     await delay(200)
-    this.setState({changeScreen: false, showError: false, attemptFailed: false})
+    this.setState({
+      changeScreen: false,
+      showError: false,
+      attemptFailed: false
+    })
   }
 
   onPressButtonNumber = async (text: string) => {
     if (this.state.showError && this.state.attemptFailed) this.newAttempt()
     const currentPassword = this.state.password + text
-    this.setState({password: currentPassword})
+    this.setState({ password: currentPassword })
+    if (this.props.getCurrentLength)
+      this.props.getCurrentLength(currentPassword.length)
     if (currentPassword.length === this.props.passwordLength) {
       switch (this.props.status) {
         case PinStatus.choose:
-          this.endProcess(currentPassword)
+          if (
+            this.props.validationRegex &&
+            this.props.validationRegex.test(currentPassword)
+          ) {
+            this.showError(true)
+          } else {
+            this.endProcess(currentPassword)
+          }
           break
         case PinStatus.confirm:
           if (currentPassword !== this.props.previousPin) {
@@ -158,7 +195,10 @@ class PinCode extends React.PureComponent<IProps, IState> {
   }
 
   renderButtonNumber = (text: string) => {
-    const disabled = (this.state.password.length === this.props.passwordLength || this.state.showError) && !this.state.attemptFailed
+    const disabled =
+      (this.state.password.length === this.props.passwordLength ||
+        this.state.showError) &&
+      !this.state.attemptFailed
     return (
       <Animate
         show={true}
@@ -166,33 +206,57 @@ class PinCode extends React.PureComponent<IProps, IState> {
           opacity: 1
         }}
         update={{
-          opacity: [this.state.showError && !this.state.attemptFailed ? 0.5 : 1],
-          timing: {duration: 200, ease: easeLinear}
+          opacity: [
+            this.state.showError && !this.state.attemptFailed ? 0.5 : 1
+          ],
+          timing: { duration: 200, ease: easeLinear }
         }}>
-        {({opacity}: any) => (
+        {({ opacity }: any) => (
           <TouchableHighlight
-            style={this.props.styleButtonCircle ? this.props.styleButtonCircle : styles.buttonCircle}
-            underlayColor={this.props.numbersButtonOverlayColor ? this.props.numbersButtonOverlayColor : colors.turquoise}
+            style={
+              this.props.styleButtonCircle
+                ? this.props.styleButtonCircle
+                : styles.buttonCircle
+            }
+            underlayColor={
+              this.props.numbersButtonOverlayColor
+                ? this.props.numbersButtonOverlayColor
+                : colors.turquoise
+            }
             disabled={disabled}
-            onShowUnderlay={() => this.setState({textButtonSelected: text})}
-            onHideUnderlay={() => this.setState({textButtonSelected: ''})}
+            onShowUnderlay={() => this.setState({ textButtonSelected: text })}
+            onHideUnderlay={() => this.setState({ textButtonSelected: '' })}
             onPress={() => {
               this.onPressButtonNumber(text)
             }}>
-            <Text style={[this.props.styleTextButton ? this.props.styleTextButton : styles.text, {
-              opacity: opacity,
-              color: this.state.textButtonSelected === text ? (this.props.styleColorButtonTitleSelected ?
-                this.props.styleColorButtonTitleSelected : colors.white) : (this.props.styleColorButtonTitle ?
-                this.props.styleColorButtonTitle : colors.grey)
-            }]}>{text}</Text>
+            <Text
+              style={[
+                this.props.styleTextButton
+                  ? this.props.styleTextButton
+                  : styles.text,
+                {
+                  opacity: opacity,
+                  color:
+                    this.state.textButtonSelected === text
+                      ? this.props.styleColorButtonTitleSelected
+                        ? this.props.styleColorButtonTitleSelected
+                        : colors.white
+                      : this.props.styleColorButtonTitle
+                        ? this.props.styleColorButtonTitle
+                        : colors.grey
+                }
+              ]}>
+              {text}
+            </Text>
           </TouchableHighlight>
         )}
-      </Animate>)
+      </Animate>
+    )
   }
 
   endProcess = (pwd: string) => {
     setTimeout(() => {
-      this.setState({changeScreen: true})
+      this.setState({ changeScreen: true })
       setTimeout(() => {
         this.props.endProcess(pwd)
       }, 500)
@@ -204,86 +268,154 @@ class PinCode extends React.PureComponent<IProps, IState> {
     Vibration.vibrate(500, false)
     const length = Dimensions.get('window').width / 3
     await delay(duration)
-    this.setState({moveData: {x: length, y: 0}})
+    this.setState({ moveData: { x: length, y: 0 } })
     await delay(duration)
-    this.setState({moveData: {x: -length, y: 0}})
+    this.setState({ moveData: { x: -length, y: 0 } })
     await delay(duration)
-    this.setState({moveData: {x: length / 2, y: 0}})
+    this.setState({ moveData: { x: length / 2, y: 0 } })
     await delay(duration)
-    this.setState({moveData: {x: -length / 2, y: 0}})
+    this.setState({ moveData: { x: -length / 2, y: 0 } })
     await delay(duration)
-    this.setState({moveData: {x: length / 4, y: 0}})
+    this.setState({ moveData: { x: length / 4, y: 0 } })
     await delay(duration)
-    this.setState({moveData: {x: -length / 4, y: 0}})
+    this.setState({ moveData: { x: -length / 4, y: 0 } })
     await delay(duration)
-    this.setState({moveData: {x: 0, y: 0}, password: ''})
+    this.setState({ moveData: { x: 0, y: 0 } })
+    if (this.props.getCurrentLength) this.props.getCurrentLength(0)
   }
 
-  async showError() {
-    this.setState({changeScreen: true})
+  async showError(isErrorValidation = false) {
+    this.setState({ changeScreen: true })
     await delay(300)
-    this.setState({showError: true, changeScreen: false})
+    this.setState({ showError: true, changeScreen: false })
     this.doShake()
     await delay(3000)
-    this.setState({changeScreen: true})
+    this.setState({ changeScreen: true })
     await delay(200)
-    this.setState({showError: false})
+    this.setState({ showError: false, password: '' })
     await delay(200)
-    this.props.endProcess(this.state.password)
+    this.props.endProcess(this.state.password, isErrorValidation)
+    if (isErrorValidation) this.setState({ changeScreen: false })
   }
 
   renderCirclePassword = () => {
-    const {password, moveData, showError, changeScreen, attemptFailed} = this.state
+    const {
+      password,
+      moveData,
+      showError,
+      changeScreen,
+      attemptFailed
+    } = this.state
     return (
       <View
-        style={this.props.styleCircleHiddenPassword ? this.props.styleCircleHiddenPassword : styles.viewCirclePassword}>
+        style={
+          this.props.styleCircleHiddenPassword
+            ? this.props.styleCircleHiddenPassword
+            : styles.topViewCirclePassword
+        }>
         {_.range(this.props.passwordLength).map((val: number) => {
-          const lengthSup = ((password.length >= val + 1 && !changeScreen) || showError) && !attemptFailed
-          const marginSup = ((password.length > 0 && !changeScreen) || showError) && !attemptFailed
+          const lengthSup =
+            ((password.length >= val + 1 && !changeScreen) || showError) &&
+            !attemptFailed
           return (
             <Animate
               key={val}
               show={true}
               start={{
                 opacity: 0.5,
-                height: 4,
-                width: 4,
-                borderRadius: 2,
-                color: (this.props.colorPassword ? this.props.colorPassword : colors.turquoise),
+                height: this._circleSizeEmpty,
+                width: this._circleSizeEmpty,
+                borderRadius: this._circleSizeEmpty / 2,
+                color: this.props.colorPassword
+                  ? this.props.colorPassword
+                  : colors.turquoise,
                 marginRight: 10,
                 marginLeft: 10,
-                marginBottom: grid.unit * 2,
-                marginTop: grid.unit * 4,
                 x: 0,
                 y: 0
               }}
               update={{
                 x: [moveData.x],
                 opacity: [lengthSup ? 1 : 0.5],
-                height: [lengthSup ? 8 : 4],
-                width: [lengthSup ? 8 : 4],
-                color: [showError ? (this.props.colorPasswordError ? this.props.colorPasswordError : colors.alert) : (this.props.colorPassword ? this.props.colorPassword : colors.turquoise)],
-                borderRadius: [lengthSup ? 4 : 2],
-                marginRight: [lengthSup ? 8 : 10],
-                marginLeft: [lengthSup ? 8 : 10],
-                marginBottom: [marginSup ? 30 : grid.unit * 2],
-                marginTop: [marginSup ? 62 : grid.unit * 4],
+                height: [
+                  lengthSup ? this._circleSizeFull : this._circleSizeEmpty
+                ],
+                width: [
+                  lengthSup ? this._circleSizeFull : this._circleSizeEmpty
+                ],
+                color: [
+                  showError
+                    ? this.props.colorPasswordError
+                      ? this.props.colorPasswordError
+                      : colors.alert
+                    : this.props.colorPassword
+                      ? this.props.colorPassword
+                      : colors.turquoise
+                ],
+                borderRadius: [
+                  lengthSup
+                    ? this._circleSizeFull / 2
+                    : this._circleSizeEmpty / 2
+                ],
+                marginRight: [
+                  lengthSup
+                    ? 10 - (this._circleSizeFull - this._circleSizeEmpty) / 2
+                    : 10
+                ],
+                marginLeft: [
+                  lengthSup
+                    ? 10 - (this._circleSizeFull - this._circleSizeEmpty) / 2
+                    : 10
+                ],
                 y: [moveData.y],
-                timing: {duration: 200, ease: easeLinear}
+                timing: { duration: 200, ease: easeLinear }
               }}>
-              {({opacity, x, height, width, color, borderRadius, marginRight, marginTop, marginLeft, marginBottom}: any) => (
-                <View style={{
-                  left: x,
-                  opacity: opacity,
-                  height: height,
-                  width: width,
-                  borderRadius: borderRadius,
-                  marginLeft: marginLeft,
-                  marginRight: marginRight,
-                  marginBottom: marginBottom,
-                  marginTop: marginTop,
-                  backgroundColor: color
-                }}/>
+              {({
+                opacity,
+                x,
+                height,
+                width,
+                color,
+                borderRadius,
+                marginRight,
+                marginLeft
+              }: any) => (
+                <View style={styles.viewCircles}>
+                  {((!this.props.pinCodeVisible ||
+                    (this.props.pinCodeVisible && !lengthSup)) && (
+                    <View
+                      style={{
+                        left: x,
+                        height: height,
+                        width: width,
+                        opacity: opacity,
+                        borderRadius: borderRadius,
+                        marginLeft: marginLeft,
+                        marginRight: marginRight,
+                        backgroundColor: color
+                      }}
+                    />
+                  )) || (
+                    <View
+                      style={{
+                        left: x,
+                        opacity: opacity,
+                        marginLeft: marginLeft,
+                        marginRight: marginRight
+                      }}>
+                      <Text
+                        style={{
+                          color: color,
+                          fontFamily:
+                            this.props.textPasswordVisibleFamily ||
+                            'system font',
+                          fontSize: this.props.textPasswordVisibleSize || 22
+                        }}>
+                        {this.state.password[val]}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               )}
             </Animate>
           )
@@ -293,137 +425,339 @@ class PinCode extends React.PureComponent<IProps, IState> {
   }
 
   renderButtonDelete = (opacity: number) => {
-    return (<TouchableHighlight
-      style={this.props.styleColumnDeleteButton ? this.props.styleColumnDeleteButton : styles.colIcon}
-      disabled={this.state.password.length === 0} underlayColor="transparent"
-      onHideUnderlay={() => this.setState({
-        colorDelete: this.props.styleDeleteButtonColorHideUnderlay ?
-          this.props.styleDeleteButtonColorHideUnderlay : 'rgb(211, 213, 218)'
-      })}
-      onShowUnderlay={() => this.setState({
-        colorDelete: this.props.styleDeleteButtonColorShowUnderlay ?
-          this.props.styleDeleteButtonColorShowUnderlay : colors.turquoise
-      })}
-      onPress={() => this.state.password.length > 0 && this.setState({password: this.state.password.slice(0, -1)})}>
-      <View>
-        {!this.props.iconButtonDeleteDisabled &&
-        <Icon name={this.props.styleDeleteButtonIcon ? this.props.styleDeleteButtonIcon : 'backspace'}
-              size={this.props.styleDeleteButtonSize ? this.props.styleDeleteButtonSize : 30}
-              color={this.state.colorDelete} style={{opacity: opacity}}/>}
-        <Text style={[this.props.styleDeleteButtonText ? this.props.styleDeleteButtonText : styles.textDeleteButton,
-          {color: this.state.colorDelete, opacity: opacity}]}>
-          {this.props.buttonDeleteText ? this.props.buttonDeleteText : textDeleteButtonDefault}
-        </Text>
-      </View>
-    </TouchableHighlight>)
+    return (
+      <TouchableHighlight
+        disabled={this.state.password.length === 0}
+        underlayColor="transparent"
+        onHideUnderlay={() =>
+          this.setState({
+            colorDelete: this.props.styleDeleteButtonColorHideUnderlay
+              ? this.props.styleDeleteButtonColorHideUnderlay
+              : 'rgb(211, 213, 218)'
+          })
+        }
+        onShowUnderlay={() =>
+          this.setState({
+            colorDelete: this.props.styleDeleteButtonColorShowUnderlay
+              ? this.props.styleDeleteButtonColorShowUnderlay
+              : colors.turquoise
+          })
+        }
+        onPress={() => {
+          if (this.state.password.length > 0) {
+            const newPass = this.state.password.slice(0, -1)
+            this.setState({ password: newPass })
+            if (this.props.getCurrentLength)
+              this.props.getCurrentLength(newPass.length)
+          }
+        }}>
+        <View
+          style={
+            this.props.styleColumnDeleteButton
+              ? this.props.styleColumnDeleteButton
+              : styles.colIcon
+          }>
+          {!this.props.iconButtonDeleteDisabled && (
+            <Icon
+              name={
+                this.props.styleDeleteButtonIcon
+                  ? this.props.styleDeleteButtonIcon
+                  : 'backspace'
+              }
+              size={
+                this.props.styleDeleteButtonSize
+                  ? this.props.styleDeleteButtonSize
+                  : 30
+              }
+              color={this.state.colorDelete}
+              style={{ opacity: opacity }}
+            />
+          )}
+          <Text
+            style={[
+              this.props.styleDeleteButtonText
+                ? this.props.styleDeleteButtonText
+                : styles.textDeleteButton,
+              { color: this.state.colorDelete, opacity: opacity }
+            ]}>
+            {this.props.buttonDeleteText
+              ? this.props.buttonDeleteText
+              : textDeleteButtonDefault}
+          </Text>
+        </View>
+      </TouchableHighlight>
+    )
   }
 
-  renderTitle = (colorTitle: string, opacityTitle: number, attemptFailed: boolean, showError: boolean) => {
+  renderTitle = (
+    colorTitle: string,
+    opacityTitle: number,
+    attemptFailed: boolean,
+    showError: boolean
+  ) => {
     return (
-      <Text style={[this.props.styleTextTitle ? this.props.styleTextTitle : styles.textTitle,
-        {color: colorTitle, opacity: opacityTitle}]}>
-        {(attemptFailed && this.props.titleAttemptFailed) || (showError && this.props.titleConfirmFailed) || this.props.sentenceTitle}
-      </Text>)
+      <Text
+        style={[
+          this.props.styleTextTitle
+            ? this.props.styleTextTitle
+            : styles.textTitle,
+          { color: colorTitle, opacity: opacityTitle }
+        ]}>
+        {(attemptFailed && this.props.titleAttemptFailed) ||
+          (showError && this.props.titleConfirmFailed) ||
+          (showError && this.props.titleValidationFailed) ||
+          this.props.sentenceTitle}
+      </Text>
+    )
   }
 
-  renderSubtitle = (colorTitle: string, opacityTitle: number, attemptFailed: boolean, showError: boolean) => {
+  renderSubtitle = (
+    colorTitle: string,
+    opacityTitle: number,
+    attemptFailed: boolean,
+    showError: boolean
+  ) => {
     return (
-      <Text style={[this.props.styleTextSubtitle ? this.props.styleTextSubtitle : styles.textSubtitle,
-        {color: colorTitle, opacity: opacityTitle}]}>
-        {attemptFailed || showError ? this.props.subtitleError : this.props.subtitle}
-      </Text>)
+      <Text
+        style={[
+          this.props.styleTextSubtitle
+            ? this.props.styleTextSubtitle
+            : styles.textSubtitle,
+          { color: colorTitle, opacity: opacityTitle }
+        ]}>
+        {attemptFailed || showError
+          ? this.props.subtitleError
+          : this.props.subtitle}
+      </Text>
+    )
   }
 
   render() {
-    const {password, showError, attemptFailed, changeScreen} = this.state
+    const { password, showError, attemptFailed, changeScreen } = this.state
     return (
-      <View style={this.props.styleContainer ? this.props.styleContainer : styles.container}>
+      <View
+        style={
+          this.props.styleContainer
+            ? this.props.styleContainer
+            : styles.container
+        }>
         <Animate
           show={true}
           start={{
             opacity: 0,
-            colorTitle: this.props.styleColorTitle ? this.props.styleColorTitle : colors.grey,
-            colorSubtitle: this.props.styleColorSubtitle ? this.props.styleColorSubtitle : colors.grey,
+            colorTitle: this.props.styleColorTitle
+              ? this.props.styleColorTitle
+              : colors.grey,
+            colorSubtitle: this.props.styleColorSubtitle
+              ? this.props.styleColorSubtitle
+              : colors.grey,
             opacityTitle: 1
           }}
           enter={{
             opacity: [1],
-            colorTitle: [this.props.styleColorTitle ? this.props.styleColorTitle : colors.grey],
-            colorSubtitle: [this.props.styleColorSubtitle ? this.props.styleColorSubtitle : colors.grey],
+            colorTitle: [
+              this.props.styleColorTitle
+                ? this.props.styleColorTitle
+                : colors.grey
+            ],
+            colorSubtitle: [
+              this.props.styleColorSubtitle
+                ? this.props.styleColorSubtitle
+                : colors.grey
+            ],
             opacityTitle: [1],
-            timing: {duration: 200, ease: easeLinear}
+            timing: { duration: 200, ease: easeLinear }
           }}
           update={{
             opacity: [changeScreen ? 0 : 1],
-            colorTitle: [showError || attemptFailed ?
-              (this.props.styleColorTitleError ? this.props.styleColorTitleError : colors.alert) :
-              (this.props.styleColorTitle ? this.props.styleColorTitle : colors.grey)],
-            colorSubtitle: [showError || attemptFailed ?
-              (this.props.styleColorSubtitleError ? this.props.styleColorSubtitleError : colors.alert) :
-              (this.props.styleColorSubtitle ? this.props.styleColorSubtitle : colors.grey)],
+            colorTitle: [
+              showError || attemptFailed
+                ? this.props.styleColorTitleError
+                  ? this.props.styleColorTitleError
+                  : colors.alert
+                : this.props.styleColorTitle
+                  ? this.props.styleColorTitle
+                  : colors.grey
+            ],
+            colorSubtitle: [
+              showError || attemptFailed
+                ? this.props.styleColorSubtitleError
+                  ? this.props.styleColorSubtitleError
+                  : colors.alert
+                : this.props.styleColorSubtitle
+                  ? this.props.styleColorSubtitle
+                  : colors.grey
+            ],
             opacityTitle: [showError || attemptFailed ? grid.highOpacity : 1],
-            timing: {duration: 200, ease: easeLinear}
+            timing: { duration: 200, ease: easeLinear }
           }}>
-          {({opacity, colorTitle, colorSubtitle, opacityTitle}: any) => (
+          {({ opacity, colorTitle, colorSubtitle, opacityTitle }: any) => (
             <View
-              style={[this.props.styleViewTitle ? this.props.styleViewTitle : styles.viewTitle, {opacity: opacity}]}>
-              {this.props.titleComponent ? this.props.titleComponent() :
-                this.renderTitle(colorTitle, opacityTitle, attemptFailed, showError)}
-              {this.props.subtitleComponent ? this.props.subtitleComponent() :
-                this.renderSubtitle(colorSubtitle, opacityTitle, attemptFailed, showError)}
+              style={[
+                this.props.styleViewTitle
+                  ? this.props.styleViewTitle
+                  : styles.viewTitle,
+                { opacity: opacity }
+              ]}>
+              {this.props.titleComponent
+                ? this.props.titleComponent()
+                : this.renderTitle(
+                    colorTitle,
+                    opacityTitle,
+                    attemptFailed,
+                    showError
+                  )}
+              {this.props.subtitleComponent
+                ? this.props.subtitleComponent()
+                : this.renderSubtitle(
+                    colorSubtitle,
+                    opacityTitle,
+                    attemptFailed,
+                    showError
+                  )}
             </View>
           )}
         </Animate>
-        <View>{this.props.passwordComponent ? this.props.passwordComponent() : this.renderCirclePassword()}</View>
-        <Grid style={{maxHeight: grid.unit * 22, maxWidth: grid.unit * 16.25}}>
-          <Row style={this.props.styleRowButtons ? this.props.styleRowButtons : styles.row}>
+        <View style={styles.flexCirclePassword}>
+          {this.props.passwordComponent
+            ? this.props.passwordComponent()
+            : this.renderCirclePassword()}
+        </View>
+        <Grid style={styles.grid}>
+          <Row
+            style={
+              this.props.styleRowButtons
+                ? this.props.styleRowButtons
+                : styles.row
+            }>
             {_.range(1, 4).map((i: number) => {
-              return (<Col key={i}
-                           style={this.props.styleColumnButtons ? this.props.styleColumnButtons : styles.colButtonCircle}>
-                {this.props.buttonNumberComponent ? this.props.buttonNumberComponent(i, this.onPressButtonNumber) :
-                  this.renderButtonNumber(i.toString())}
-              </Col>)
+              return (
+                <Col
+                  key={i}
+                  style={
+                    this.props.styleColumnButtons
+                      ? this.props.styleColumnButtons
+                      : styles.colButtonCircle
+                  }>
+                  {this.props.buttonNumberComponent
+                    ? this.props.buttonNumberComponent(
+                        i,
+                        this.onPressButtonNumber
+                      )
+                    : this.renderButtonNumber(i.toString())}
+                </Col>
+              )
             })}
           </Row>
-          <Row style={this.props.styleRowButtons ? this.props.styleRowButtons : styles.row}>
+          <Row
+            style={
+              this.props.styleRowButtons
+                ? this.props.styleRowButtons
+                : styles.row
+            }>
             {_.range(4, 7).map((i: number) => {
-              return (<Col key={i}
-                           style={this.props.styleColumnButtons ? this.props.styleColumnButtons : styles.colButtonCircle}>
-                {this.props.buttonNumberComponent ? this.props.buttonNumberComponent(i, this.onPressButtonNumber) :
-                  this.renderButtonNumber(i.toString())}
-              </Col>)
+              return (
+                <Col
+                  key={i}
+                  style={
+                    this.props.styleColumnButtons
+                      ? this.props.styleColumnButtons
+                      : styles.colButtonCircle
+                  }>
+                  {this.props.buttonNumberComponent
+                    ? this.props.buttonNumberComponent(
+                        i,
+                        this.onPressButtonNumber
+                      )
+                    : this.renderButtonNumber(i.toString())}
+                </Col>
+              )
             })}
           </Row>
-          <Row style={this.props.styleRowButtons ? this.props.styleRowButtons : styles.row}>
+          <Row
+            style={
+              this.props.styleRowButtons
+                ? this.props.styleRowButtons
+                : styles.row
+            }>
             {_.range(7, 10).map((i: number) => {
-              return (<Col key={i}
-                           style={this.props.styleColumnButtons ? this.props.styleColumnButtons : styles.colButtonCircle}>
-                {this.props.buttonNumberComponent ? this.props.buttonNumberComponent(i, this.onPressButtonNumber) :
-                  this.renderButtonNumber(i.toString())}
-              </Col>)
+              return (
+                <Col
+                  key={i}
+                  style={
+                    this.props.styleColumnButtons
+                      ? this.props.styleColumnButtons
+                      : styles.colButtonCircle
+                  }>
+                  {this.props.buttonNumberComponent
+                    ? this.props.buttonNumberComponent(
+                        i,
+                        this.onPressButtonNumber
+                      )
+                    : this.renderButtonNumber(i.toString())}
+                </Col>
+              )
             })}
           </Row>
-          <Row style={this.props.styleRowButtons ? this.props.styleRowButtons : styles.row}>
-            <Col style={this.props.styleEmptyColumn ? this.props.styleEmptyColumn : styles.colEmpty}/>
-            <Col style={this.props.styleColumnButtons ? this.props.styleColumnButtons : styles.colButtonCircle}>
-              {this.props.buttonNumberComponent ? this.props.buttonNumberComponent('0', this.onPressButtonNumber) :
-                this.renderButtonNumber('0')}
+          <Row
+            style={
+              this.props.styleRowButtons
+                ? this.props.styleRowButtons
+                : styles.row
+            }>
+            <Col
+              style={
+                this.props.styleEmptyColumn
+                  ? this.props.styleEmptyColumn
+                  : styles.colEmpty
+              }>
+              {this.props.emptyColumnComponent || null}
             </Col>
-            <Col>
+            <Col
+              style={
+                this.props.styleColumnButtons
+                  ? this.props.styleColumnButtons
+                  : styles.colButtonCircle
+              }>
+              {this.props.buttonNumberComponent
+                ? this.props.buttonNumberComponent(
+                    '0',
+                    this.onPressButtonNumber
+                  )
+                : this.renderButtonNumber('0')}
+            </Col>
+            <Col
+              style={
+                this.props.styleColumnButtons
+                  ? this.props.styleColumnButtons
+                  : styles.colButtonCircle
+              }>
               <Animate
                 show={true}
                 start={{
                   opacity: 0.5
                 }}
                 update={{
-                  opacity: [password.length === 0 || password.length === this.props.passwordLength ? 0.5 : 1],
-                  timing: {duration: 400, ease: easeLinear}
+                  opacity: [
+                    password.length === 0 ||
+                    password.length === this.props.passwordLength
+                      ? 0.5
+                      : 1
+                  ],
+                  timing: { duration: 400, ease: easeLinear }
                 }}>
-                {({opacity}: any) => (
-                  this.props.buttonDeleteComponent ?
-                    this.props.buttonDeleteComponent((() => this.state.password.length > 0 && this.setState({password: this.state.password.slice(0, -1)}))) :
-                    this.renderButtonDelete(opacity)
-                )}
+                {({ opacity }: any) =>
+                  this.props.buttonDeleteComponent
+                    ? this.props.buttonDeleteComponent(() => {
+                        if (this.state.password.length > 0) {
+                          const newPass = this.state.password.slice(0, -1)
+                          this.setState({ password: newPass })
+                          if (this.props.getCurrentLength)
+                            this.props.getCurrentLength(newPass.length)
+                        }
+                      })
+                    : this.renderButtonDelete(opacity)
+                }
               </Animate>
             </Col>
           </Row>
@@ -443,9 +777,9 @@ let styles = StyleSheet.create({
   },
   viewTitle: {
     flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    minHeight: grid.unit * 4
+    flex: 2
   },
   row: {
     justifyContent: 'center',
@@ -454,18 +788,20 @@ let styles = StyleSheet.create({
     height: grid.unit * 5.5
   },
   colButtonCircle: {
+    marginLeft: grid.unit / 2,
+    marginRight: grid.unit / 2,
     alignItems: 'center',
-    width: 'auto'
+    width: grid.unit * 4,
+    height: grid.unit * 4
   },
   colEmpty: {
+    marginLeft: grid.unit / 2,
+    marginRight: grid.unit / 2,
     width: grid.unit * 4,
     height: grid.unit * 4
   },
   colIcon: {
-    width: grid.unit * 4,
-    height: grid.unit * 4,
-    marginLeft: grid.unit / 2,
-    marginRight: grid.unit / 2,
+    alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column'
@@ -493,14 +829,27 @@ let styles = StyleSheet.create({
     fontWeight: '200',
     textAlign: 'center'
   },
-  viewCirclePassword: {
+  flexCirclePassword: {
+    flex: 2,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  topViewCirclePassword: {
     flexDirection: 'row',
     height: 'auto',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  viewCircles: {
     justifyContent: 'center',
     alignItems: 'center'
   },
   textDeleteButton: {
     fontWeight: '200',
     marginTop: 5
+  },
+  grid: {
+    maxWidth: grid.unit * 16.25,
+    flex: 7
   }
 })
