@@ -482,6 +482,7 @@ let styles = react_native_1.StyleSheet.create({
         flexDirection: 'column'
     },
   text: {
+      fontFamily: 'Avenir Next',
       fontSize: grid_1.grid.unit * 2,
       fontWeight: '300',
       color: '#3C3F43',
@@ -499,6 +500,7 @@ let styles = react_native_1.StyleSheet.create({
       shadowRadius: 7,  
     },
   textTitle: {
+      fontFamily: 'Avenir Next',
       fontSize: 15,
       fontWeight: '600',
       color: '#3C3F43',
@@ -506,6 +508,7 @@ let styles = react_native_1.StyleSheet.create({
       textAlign: 'center'
     },
   textSubtitle: {
+      fontFamily: 'Avenir Next',
       fontSize: 15,
       fontWeight: '600',
       color: '#3C3F43',
@@ -528,6 +531,7 @@ let styles = react_native_1.StyleSheet.create({
         alignItems: 'center'
     },
     textDeleteButton: {
+        fontFamily: 'Avenir Next',
         fontWeight: '200',
         marginTop: 5
     },
